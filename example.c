@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 typedef struct {
     int inner[256];
     int size;
@@ -12,7 +14,7 @@ void list_into_inner(list self, int* dest) {
 }
 
 int main() {
-    list list = { { 1, 2, 3 }, 3 };
+    list list = { .inner = { 1, 2, 3 }, .size = 3 };
 
     int dest1[256];
     list_into_inner(list, dest1);
