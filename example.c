@@ -5,6 +5,24 @@ typedef struct {
     int size;
 } list;
 
+int control_flow(int until) {
+    int sum = 0;
+
+    if (until < -1) {
+        return -1;
+    }
+
+    for (int i = 0; i < until; i++) {
+        sum += i;
+        if (sum == 42) {
+            printf("Sum is 42, no further addition needed");
+            break;
+        }
+    }
+
+    return sum;
+}
+
 /**
  * @param self [move] List to extract the inner from
  * @param dest [mutable] Array where inner should be copied

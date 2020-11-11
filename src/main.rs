@@ -1,5 +1,11 @@
+mod cfg;
+mod diagnostics;
+
+use crate::cfg::CFG;
+use clang::documentation::{CommentChild, ParamCommand};
 use clang::{Clang, EntityKind, EntityVisitResult, Index};
 use clap::Clap;
+use std::convert::TryFrom;
 use std::ops::Range;
 use std::path::PathBuf;
 
@@ -21,6 +27,11 @@ struct Args {
     /// Config file path or directory containing a `polite-c.toml`
     #[clap(long, short)]
     config: Option<PathBuf>,
+
+    #[cfg(feature = "dot")]
+    /// Program used to display dot graphs, spawned with `/dev/stdin` argument
+    #[clap(long)]
+    dot_viewer: Option<String>,
 }
 
 fn make_ascii_title_case(s: &mut str) {
@@ -35,7 +46,7 @@ fn print_rusty_error<S: AsRef<str>>(
 ) {
     let source = std::fs::read_to_string(&file).unwrap();
 
-    assert_eq!(lines.len(), 1);
+    assert_eq!(lines.len(), 0);
 
     println!(
         "error: {}\n  --> {}:{}:{}",
@@ -68,6 +79,20 @@ fn print_rusty_error<S: AsRef<str>>(
     }
 }
 
+#[cfg(feature = "dot")]
+fn display_dot(graph: CFG, viewer: impl AsRef<str>) {
+    use std::process::*;
+
+    let mut viewer = Command::new(viewer.as_ref())
+        .stdin(Stdio::piped())
+        .arg("/dev/stdin")
+        .spawn()
+        .expect("failed to start viewer");
+
+    let stdin = viewer.stdin.as_mut().unwrap();
+    graph.write_dot(stdin);
+}
+
 fn main() {
     let args = Args::parse();
 
@@ -84,12 +109,33 @@ fn main() {
 
     // FIXME completely temporary structure
     let mut errors = Vec::new();
+    // let mut tags = Vec::new();
+
+    let mut fun = None;
 
     println!(" * GO !\n");
 
     tu.get_entity().visit_children(|e, _| {
+        if let Some(comment) = e.get_parsed_comment() {
+            for child in comment.get_children() {
+                match child {
+                    CommentChild::ParamCommand(ParamCommand { parameter, .. }) => {
+                        println!("{}", parameter);
+                    }
+                    _ => (),
+                }
+            }
+        }
+
         match e.get_kind() {
             EntityKind::FunctionDecl => {
+                match &mut fun {
+                    fun @ None if (e.get_name() == Some(String::from("control_flow"))) => {
+                        *fun = Some(e)
+                    }
+                    _ => (),
+                }
+
                 if let Some(arg) = e
                     .get_arguments()
                     .unwrap_or_default()
@@ -106,7 +152,7 @@ fn main() {
 
                     errors.push((
                         file,
-                        start_line..(end_line + 1),
+                        start_line..end_line,
                         start_col..end_col,
                         "using Rust naming conventions in C is absolutely illegal",
                         Some(format!(
@@ -121,6 +167,15 @@ fn main() {
 
         EntityVisitResult::Recurse
     });
+
+    #[cfg(feature = "dot")]
+    if let Some(viewer) = args.dot_viewer {
+        if let Some(fun) = fun {
+            let cfg = CFG::try_from(fun).unwrap();
+            display_dot(cfg, viewer);
+        }
+        return;
+    }
 
     for error in errors {
         print_rusty_error(error);
