@@ -3,8 +3,16 @@ use clap::Clap;
 use std::ops::Range;
 use std::path::PathBuf;
 
+lazy_static::lazy_static! {
+    static ref VERSION_WITH_CLANG: &'static str = Box::leak(format!(
+        "{}, powered by {}",
+        clap::crate_version!(),
+        clang::get_version(),
+    ).into_boxed_str());
+}
+
 #[derive(Clap, Debug)]
-#[clap(version = clap::crate_version!(), author = clap::crate_authors!(",\n"))]
+#[clap(version = *VERSION_WITH_CLANG, author = clap::crate_authors!(",\n"))]
 struct Args {
     /// C code entry point or Makefile
     #[clap(long, short)]

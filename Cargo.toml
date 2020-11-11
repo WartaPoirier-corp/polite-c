@@ -4,6 +4,11 @@ version = "0.1.0"
 authors = ["Ana Gelez <ana@gelez.xyz>", "Edgar Onghena <dev@edgar.bzh>"]
 edition = "2018"
 
+[features]
+dot = [ ]
+
 [dependencies]
 clap = "3.0.0-beta.2"
 clang = { version = "1.0", features = ["clang_10_0"] }
+lazy_static = "1.4"
+petgraph = "0.5"
