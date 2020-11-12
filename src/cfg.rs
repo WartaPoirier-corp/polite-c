@@ -69,13 +69,11 @@ impl<'tu> TryFrom<clang::Entity<'tu>> for CFG {
         /// the (sub-)graph.
         ///
         /// Normal statements are simply chained together. Control flow operators may create other
-        /// sub-graphs and will introduce [Node::ConditionalGoto]s.
+        /// sub-graphs and will introduce [Node::ConditionalGoto](enum.Node.html#variant.ConditionalGoto)s.
         ///
         ///   * `next` - The node where the (sub-)graph should connect its final node(s)
         ///   * `break_to` - The node where a `break` statement should bring the control flow to. By
         ///     default, the function's implicit return. Gets reassigned when entering loops.
-        ///
-        /// [Node::ConditionalGoto](enum.Node.html#variant.ConditionalGoto)
         fn build(
             graph: &mut DiGraph<Node, Edge>,
             next: NodeIndex,

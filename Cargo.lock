@@ -134,6 +134,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4d58d1b70b004888f764dfbf6a26a3b0342a1632d33968e4a179d8011c760614"
 
 [[package]]
+name = "make-u-move"
+version = "0.1.0"
+source = "git+https://github.com/WartaPoirier-corp/make-u-move?rev=8f1077be7f2c8de062c906e863259f55a8ca7432#8f1077be7f2c8de062c906e863259f55a8ca7432"
+
+[[package]]
 name = "os_str_bytes"
 version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -156,6 +161,7 @@ dependencies = [
  "clang",
  "clap",
  "lazy_static",
+ "make-u-move",
  "petgraph",
 ]
 
