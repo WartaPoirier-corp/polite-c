@@ -1,38 +1,14 @@
 mod cfg;
+mod cli;
 mod diagnostics;
 
 use crate::cfg::CFG;
+use crate::cli::Args;
 use clang::documentation::{CommentChild, ParamCommand};
 use clang::{Clang, EntityKind, EntityVisitResult, Index};
-use clap::Clap;
 use std::convert::TryFrom;
 use std::ops::Range;
-use std::path::PathBuf;
-
-lazy_static::lazy_static! {
-    static ref VERSION_WITH_CLANG: &'static str = Box::leak(format!(
-        "{}, powered by {}",
-        clap::crate_version!(),
-        clang::get_version(),
-    ).into_boxed_str());
-}
-
-#[derive(Clap, Debug)]
-#[clap(version = *VERSION_WITH_CLANG, author = clap::crate_authors!(",\n"))]
-struct Args {
-    /// C code entry point or Makefile
-    #[clap(long, short)]
-    entry: Option<PathBuf>,
-
-    /// Config file path or directory containing a `polite-c.toml`
-    #[clap(long, short)]
-    config: Option<PathBuf>,
-
-    #[cfg(feature = "dot")]
-    /// Program used to display dot graphs, spawned with `/dev/stdin` argument
-    #[clap(long)]
-    dot_viewer: Option<String>,
-}
+use std::path::Path;
 
 fn make_ascii_title_case(s: &mut str) {
     if let Some(s) = s.get_mut(0..1) {
@@ -103,7 +79,7 @@ fn main() {
     let clang = Clang::new().unwrap();
 
     let index = Index::new(&clang, false, false);
-    let tu = index.parser("example.c").parse().unwrap();
+    let tu = index.parser("test_c_project/example.c").parse().unwrap();
 
     println!(" * Initiate starter process");
 
@@ -111,7 +87,23 @@ fn main() {
     let mut errors = Vec::new();
     // let mut tags = Vec::new();
 
-    let mut fun = None;
+    #[cfg(feature = "dot")]
+    if let Some(analyse) = args.analyse {
+        let viewer = args
+            .dot_viewer
+            .expect("no --dot-viewer specified when launched in analysis mode");
+
+        let tu_ = index.parser(&analyse.file).parse().unwrap();
+        let tu = tu_.get_entity();
+
+        let function = analyse
+            //.find(&index, EntityKind::FunctionDecl)
+            .find(tu, EntityKind::FunctionDecl)
+            .expect(&format!("{} yielded no match ;(", analyse));
+
+        let cfg = CFG::try_from(function).unwrap();
+        display_dot(cfg, viewer);
+    }
 
     println!(" * GO !\n");
 
@@ -129,13 +121,6 @@ fn main() {
 
         match e.get_kind() {
             EntityKind::FunctionDecl => {
-                match &mut fun {
-                    fun @ None if (e.get_name() == Some(String::from("control_flow"))) => {
-                        *fun = Some(e)
-                    }
-                    _ => (),
-                }
-
                 if let Some(arg) = e
                     .get_arguments()
                     .unwrap_or_default()
@@ -167,15 +152,6 @@ fn main() {
 
         EntityVisitResult::Recurse
     });
-
-    #[cfg(feature = "dot")]
-    if let Some(viewer) = args.dot_viewer {
-        if let Some(fun) = fun {
-            let cfg = CFG::try_from(fun).unwrap();
-            display_dot(cfg, viewer);
-        }
-        return;
-    }
 
     for error in errors {
         print_rusty_error(error);
