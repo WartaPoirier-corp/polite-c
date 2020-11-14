@@ -123,5 +123,6 @@ jobs:
           path: |
             target/release/polite-c
             target/release/polite-c.exe
+            target/release/*.dll
             target/debian/*.deb
 
