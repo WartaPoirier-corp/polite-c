@@ -1,6 +1,5 @@
 use clang::{Entity, EntityKind};
 use petgraph::prelude::*;
-use std::collections::LinkedList;
 use std::convert::TryFrom;
 use std::fmt::Debug;
 

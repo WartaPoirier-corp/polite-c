@@ -145,7 +145,7 @@ impl FromStr for CFileLocation {
             });
         }
 
-        return Err(CFileLocationParseError::InvalidFormat);
+        Err(CFileLocationParseError::InvalidFormat)
     }
 }
 
