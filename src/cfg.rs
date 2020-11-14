@@ -1,6 +1,5 @@
 use clang::{Entity, EntityKind};
 use petgraph::prelude::*;
-use std::collections::LinkedList;
 use std::convert::TryFrom;
 use std::fmt::Debug;
 
@@ -41,6 +40,7 @@ impl<'tu> std::fmt::Display for Node {
 
 /// Control-Flow Graph of a function's body
 pub struct CFG {
+    #[allow(dead_code)] // FIXME: temporary, until we have something more than a dot export
     graph: DiGraph<Node, Edge>,
 }
 
@@ -52,7 +52,7 @@ impl<'tu> TryFrom<clang::Entity<'tu>> for CFG {
             return Err(());
         }
 
-        let args = function.get_arguments().unwrap(); // TODO don't unwrap
+        let _args = function.get_arguments().unwrap(); // TODO don't unwrap
         let root_stmt = function
             .get_children()
             .iter()
@@ -78,7 +78,7 @@ impl<'tu> TryFrom<clang::Entity<'tu>> for CFG {
             graph: &mut DiGraph<Node, Edge>,
             next: NodeIndex,
             break_to: NodeIndex,
-            mut statements: Vec<Entity>,
+            statements: Vec<Entity>,
         ) -> NodeIndex {
             println!(
                 "{}",
@@ -110,7 +110,7 @@ impl<'tu> TryFrom<clang::Entity<'tu>> for CFG {
                         // FIXME might by a compound statement ?
                         let stmt_init = graph.add_node(Node::from(entity.get_child(0).unwrap()));
                         // FIXME might by a compound statement ?
-                        let stmt_cond = entity.get_child(1).unwrap();
+                        let _stmt_cond = entity.get_child(1).unwrap();
                         // FIXME might by a compound statement ?
                         let stmt_after = graph.add_node(Node::from(entity.get_child(2).unwrap()));
                         let stmt_block = entity.get_child(3).unwrap();

@@ -2,13 +2,15 @@ mod cfg;
 mod cli;
 mod diagnostics;
 
+#[cfg(feature = "dot")]
 use crate::cfg::CFG;
+#[cfg(feature = "dot")]
 use crate::cli::Args;
 use clang::documentation::{CommentChild, ParamCommand};
 use clang::{Clang, EntityKind, EntityVisitResult, Index};
+#[cfg(feature = "dot")]
 use std::convert::TryFrom;
 use std::ops::Range;
-use std::path::Path;
 
 fn make_ascii_title_case(s: &mut str) {
     if let Some(s) = s.get_mut(0..1) {
@@ -66,10 +68,13 @@ fn display_dot(graph: CFG, viewer: impl AsRef<str>) {
         .expect("failed to start viewer");
 
     let stdin = viewer.stdin.as_mut().unwrap();
-    graph.write_dot(stdin);
+    graph.write_dot(stdin).unwrap();
 }
 
 fn main() {
+    #![allow(clippy::expect_fun_call)]
+
+    #[cfg(feature = "dot")]
     let args = Args::parse();
 
     println!("polite-c");
@@ -110,44 +115,38 @@ fn main() {
     tu.get_entity().visit_children(|e, _| {
         if let Some(comment) = e.get_parsed_comment() {
             for child in comment.get_children() {
-                match child {
-                    CommentChild::ParamCommand(ParamCommand { parameter, .. }) => {
-                        println!("{}", parameter);
-                    }
-                    _ => (),
+                if let CommentChild::ParamCommand(ParamCommand { parameter, .. }) = child {
+                    println!("{}", parameter);
                 }
             }
         }
 
-        match e.get_kind() {
-            EntityKind::FunctionDecl => {
-                if let Some(arg) = e
-                    .get_arguments()
-                    .unwrap_or_default()
-                    .iter()
-                    .find(|arg| arg.get_name() == Some("self".to_string()))
-                {
-                    let loc = arg.get_range().expect("where tf is the function ?");
+        if let EntityKind::FunctionDecl = e.get_kind() {
+            if let Some(arg) = e
+                .get_arguments()
+                .unwrap_or_default()
+                .iter()
+                .find(|arg| arg.get_name() == Some("self".to_string()))
+            {
+                let loc = arg.get_range().expect("where tf is the function ?");
 
-                    let (file, start_line, start_col) = loc.get_start().get_presumed_location();
-                    let (_, end_line, end_col) = loc.get_end().get_presumed_location();
+                let (file, start_line, start_col) = loc.get_start().get_presumed_location();
+                let (_, end_line, end_col) = loc.get_end().get_presumed_location();
 
-                    let mut typ = arg.get_type().unwrap().get_display_name();
-                    make_ascii_title_case(&mut typ);
+                let mut typ = arg.get_type().unwrap().get_display_name();
+                make_ascii_title_case(&mut typ);
 
-                    errors.push((
-                        file,
-                        start_line..end_line,
-                        start_col..end_col,
-                        "using Rust naming conventions in C is absolutely illegal",
-                        Some(format!(
-                            "note: try renaming `self` to `p_my{}` instead",
-                            typ,
-                        )),
-                    ))
-                }
+                errors.push((
+                    file,
+                    start_line..end_line,
+                    start_col..end_col,
+                    "using Rust naming conventions in C is absolutely illegal",
+                    Some(format!(
+                        "note: try renaming `self` to `p_my{}` instead",
+                        typ,
+                    )),
+                ))
             }
-            _ => (),
         }
 
         EntityVisitResult::Recurse
