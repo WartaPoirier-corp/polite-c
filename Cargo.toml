@@ -15,4 +15,4 @@ make-u-move = { git = "https://github.com/WartaPoirier-corp/make-u-move", rev = 
 petgraph = "0.5"
 
 [package.metadata.deb]
-depends = "libclang1-10, libffi7, libbsd0"
+depends = "libclang1-10, libffi-dev, libbsd0"
