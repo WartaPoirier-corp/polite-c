@@ -38,6 +38,9 @@ jobs:
           toolchain: stable
           override: true
 
+      - name: Install native dependencies
+        run: sudo apt-get install libclang-dev
+
       - name: Run cargo-tarpaulin
         uses: actions-rs/tarpaulin@v0.1
 
@@ -60,6 +63,9 @@ jobs:
           toolchain: stable
           override: true
           components: rustfmt, clippy
+
+      - name: Install native dependencies
+        run: sudo apt-get install libclang-dev
 
       - name: Run cargo fmt
         uses: actions-rs/cargo@v1
