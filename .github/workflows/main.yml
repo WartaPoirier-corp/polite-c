@@ -114,10 +114,26 @@ jobs:
         uses: actions-rs/install@v0.1
         with:
           crate: cargo-deb
+      
+      - name: Install the Wix toolset
+        if: matrix.os == 'window-2019'
+        run: choco install wixtoolset
+
+      - name: Install cargo wix
+        if: matrix.os == 'windows-2019'
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-wix
 
       - name: Build a .deb file
         if: matrix.os == 'ubuntu-20.04'
         run: cargo deb
+
+      - name: Build a .msi file
+        if: matrix.os == 'windows-2019'
+        run: |
+          cargo wix init
+          cargo wix
 
       - name: Save build
         uses: actions/upload-artifact@v2
@@ -128,4 +144,5 @@ jobs:
             target/release/polite-c.exe
             target/release/*.dll
             target/debian/*.deb
+            target/wix/*.msi
 
