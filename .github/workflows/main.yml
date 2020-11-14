@@ -109,11 +109,14 @@ jobs:
           command: build
           args: --release
       
-      - name: Build a .deb file
+      - name: Install cargo dev
         if: matrix.os == 'ubuntu-20.04'
         uses: actions-rs/install@v1
         with:
           crate: cargo-deb
+
+      - name: Build a .deb file
+        if: matrix.os == 'ubuntu-20.04'
         run: cargo deb
 
       - name: Save build
