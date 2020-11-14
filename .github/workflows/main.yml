@@ -108,6 +108,13 @@ jobs:
         with:
           command: build
           args: --release
+      
+      - name: Build a .deb file
+        if: matrix.os == 'ubuntu-20.04'
+        uses: actions-rs/install@v1
+        with:
+          crate: cargo-deb
+        run: cargo deb
 
       - name: Save build
         uses: actions/upload-artifact@v2
@@ -116,4 +123,5 @@ jobs:
           path: |
             target/release/polite-c
             target/release/polite-c.exe
+            target/debian/*.deb
 
