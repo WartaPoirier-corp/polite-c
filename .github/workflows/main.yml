@@ -111,7 +111,7 @@ jobs:
       
       - name: Install cargo dev
         if: matrix.os == 'ubuntu-20.04'
-        uses: actions-rs/install@v1
+        uses: actions-rs/install@v0.1
         with:
           crate: cargo-deb
 
