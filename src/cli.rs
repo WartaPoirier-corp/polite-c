@@ -29,6 +29,7 @@ pub struct CFileLocation {
 }
 
 impl CFileLocation {
+    #[cfg(feature = "dot")]
     pub fn find<'tu>(
         &self,
         tu: clang::Entity<'tu>, // index: &'tu clang::Index<'tu>,
@@ -145,7 +146,7 @@ impl FromStr for CFileLocation {
             });
         }
 
-        return Err(CFileLocationParseError::InvalidFormat);
+        Err(CFileLocationParseError::InvalidFormat)
     }
 }
 
@@ -184,6 +185,7 @@ pub struct Args {
 }
 
 impl Args {
+    #[cfg(feature = "dot")]
     pub fn parse() -> Self {
         Clap::parse()
     }

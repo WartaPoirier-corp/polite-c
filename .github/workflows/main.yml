@@ -1,0 +1,148 @@
+name: Main workflow
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install native dependencies
+        run: sudo apt-get install libclang-dev
+
+      - name: Run cargo test
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+
+  coverage:
+    name: Code coverage
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Install native dependencies
+        run: sudo apt-get install libclang-dev
+
+      - name: Run cargo-tarpaulin
+        uses: actions-rs/tarpaulin@v0.1
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1.0.2
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
+
+  lints:
+    name: Lints
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+
+      - name: Install native dependencies
+        run: sudo apt-get install libclang-dev
+
+      - name: Run cargo fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+      - name: Run cargo clippy
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: -- -D warnings
+
+  build:
+    name: Build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - ubuntu-20.04
+          - macos-11.0
+          - windows-2019
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v2
+
+      - name: Install stable toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Install native dependencies
+        if: matrix.os == 'ubuntu-20.04'
+        run: sudo apt-get install libclang-dev
+
+      - name: Run cargo build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+      
+      - name: Install cargo deb
+        if: matrix.os == 'ubuntu-20.04'
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-deb
+      
+      - name: Install the Wix toolset
+        if: matrix.os == 'window-2019'
+        run: choco install wixtoolset
+
+      - name: Install cargo wix
+        if: matrix.os == 'windows-2019'
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-wix
+
+      - name: Build a .deb file
+        if: matrix.os == 'ubuntu-20.04'
+        run: cargo deb
+
+      - name: Build a .msi file
+        if: matrix.os == 'windows-2019'
+        run: |
+          cargo wix init
+          cargo wix
+
+      - name: Save build
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-${{ matrix.os }}
+          path: |
+            target/release/polite-c
+            target/release/polite-c.exe
+            target/release/*.dll
+            target/debian/*.deb
+            target/wix/*.msi
+
