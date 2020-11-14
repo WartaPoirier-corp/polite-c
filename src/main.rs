@@ -2,10 +2,13 @@ mod cfg;
 mod cli;
 mod diagnostics;
 
+use crate::cfg::CFG;
 use crate::cli::Args;
 use clang::documentation::{CommentChild, ParamCommand};
 use clang::{Clang, EntityKind, EntityVisitResult, Index};
+use std::convert::TryFrom;
 use std::ops::Range;
+use std::path::Path;
 
 fn make_ascii_title_case(s: &mut str) {
     if let Some(s) = s.get_mut(0..1) {
