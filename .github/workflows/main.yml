@@ -109,7 +109,7 @@ jobs:
           command: build
           args: --release
       
-      - name: Install cargo dev
+      - name: Install cargo deb
         if: matrix.os == 'ubuntu-20.04'
         uses: actions-rs/install@v0.1
         with:
