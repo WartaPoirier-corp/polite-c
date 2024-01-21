@@ -1,3 +1,4 @@
+mod borrowck;
 mod cfg;
 mod cli;
 mod diagnostics;
